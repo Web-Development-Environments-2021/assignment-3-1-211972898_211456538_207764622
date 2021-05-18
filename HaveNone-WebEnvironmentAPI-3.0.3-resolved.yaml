@@ -1,0 +1,638 @@
+---
+openapi: 3.0.0
+info:
+  title: WDE - Assignment 3.1
+  description: Soccer website API
+  contact:
+    name: Guy & Ron
+    email: ronmag@post.bgu.ac.il
+  version: 3.0.3
+servers:
+- url: https://virtserver.swaggerhub.com/HaveNone/WebEnviermentAPI/3.0.3
+  description: SwaggerHub API Auto Mocking
+- url: http://localhost:3000/
+tags:
+- name: site
+  description: Home Page and base site functionality.
+- name: user
+  description: All relevant User functionality (register, login, logout).
+- name: profile
+  description: All relevant User functionality involving user and league.
+- name: player
+  description: information about player
+- name: team
+  description: information about team.
+- name: coach
+  description: information about coach
+- name: game
+  description: information about game
+paths:
+  /:
+    get:
+      tags:
+      - site
+      summary: home page with favorite games.
+      description: home page. recive two arrays. one is in size of 4, containing league info and the second is in size of 3 containing favorite games. for guests the second array will be empty.
+      responses:
+        "200":
+          description: OK. favorite games are coming
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /login:
+    post:
+      tags:
+      - user
+      summary: login
+      description: Login and initialize session_id.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body'
+        required: true
+      responses:
+        "200":
+          description: Login Successfully. The session ID is returned in a cookie named `SESSIONID`.  need to include this cookie in subsequent requests for communication.
+          headers:
+            Set-Cookie:
+              style: simple
+              explode: false
+              schema:
+                type: string
+                example: SESSIONID=a1d2s6f42
+        "401":
+          description: Authorization failed, Username or Password are incorrect.
+  /register:
+    post:
+      tags:
+      - user
+      summary: Registration
+      description: Registration page for new user.
+      requestBody:
+        description: Registration page for new user.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_1'
+        required: true
+      responses:
+        "200":
+          description: OK. registration complete successfully
+        "400":
+          description: Bad Request. Not all reqired arguments were given.
+        "401":
+          description: User already logged in.
+        "409":
+          description: Username is already taken.
+  /logout:
+    get:
+      tags:
+      - user
+      summary: User log out from website.
+      description: User Request to logout from the website.
+      responses:
+        "200":
+          description: logout succeeded.
+        "401":
+          description: User must be logged in before logging out.
+      security:
+      - cookieAuth: []
+  /associationCard/player/{playerId}/information:
+    get:
+      tags:
+      - player
+      description: User ask for specific player
+      parameters:
+      - name: playerId
+        in: path
+        description: Identification of the requested player by id.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: number
+          example: 234
+      responses:
+        "200":
+          description: OK. player info is loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/player'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /associationCard/coach/{coachId}/information:
+    get:
+      tags:
+      - coach
+      description: User ask for specific coach
+      parameters:
+      - name: coachId
+        in: path
+        description: Identification of the requested coach by id.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: number
+          example: 234
+      responses:
+        "200":
+          description: OK. coach info is loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/coach'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /associationCard/team/{teamId}/information:
+    get:
+      tags:
+      - team
+      description: User ask for specific team
+      parameters:
+      - name: teamId
+        in: path
+        description: Identification of the requested team by id.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: number
+          example: 234
+      responses:
+        "200":
+          description: OK. team info is loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/team'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /search/query/{searchQuery}/results:
+    get:
+      tags:
+      - player
+      - coach
+      - team
+      description: User send search query
+      parameters:
+      - name: searchQuery
+        in: path
+        description: the search query for searching a query in the API.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK. info is on the way.
+          content:
+            application/json:
+              schema:
+                minItems: 0
+                type: array
+                items:
+                  oneOf:
+                  - $ref: '#/components/schemas/player'
+                  - $ref: '#/components/schemas/coach'
+                  - $ref: '#/components/schemas/team'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+  /addToFavorites/player:
+    post:
+      tags:
+      - profile
+      - player
+      description: mark player as a user's favorite.
+      requestBody:
+        description: player that the user want to mark
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_2'
+        required: true
+      responses:
+        "201":
+          description: player added successfully.
+        "400":
+          description: one of the arguments is not specified.
+        "409":
+          description: player already marked as favorite by the user.
+      security:
+      - cookieAuth: []
+  /viewFavorites/player:
+    get:
+      tags:
+      - profile
+      - player
+      summary: Get all favorites players.
+      description: Get all favorites players that the user added to his favorites since registered.
+      responses:
+        "200":
+          description: OK.  favorite players are on the way.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/player'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /addToFavorites/game:
+    post:
+      tags:
+      - profile
+      - game
+      description: mark game as a user's favorite.
+      requestBody:
+        description: New game that the user want to add as favorite
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_3'
+        required: true
+      responses:
+        "201":
+          description: game added successfully.
+        "400":
+          description: one of the argument is not specified.
+        "409":
+          description: game already marked as favorite by the user.
+      security:
+      - cookieAuth: []
+  /viewFavorites/game:
+    get:
+      tags:
+      - profile
+      - game
+      summary: Get all favorites games.
+      description: Get all favorites games that the user added to his favorites since registered.
+      responses:
+        "200":
+          description: OK. favorite games are on the way
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/gamePreview'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /addToFavorites/team:
+    post:
+      tags:
+      - profile
+      - team
+      description: mark team as a user's favorite.
+      requestBody:
+        description: New team that the user want to mark as fav
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_4'
+        required: true
+      responses:
+        "201":
+          description: team added successfully.
+        "400":
+          description: one of the argument is not specified.
+        "409":
+          description: the team already marked as favorite by the user.
+      security:
+      - cookieAuth: []
+  /viewFavorites/team:
+    get:
+      tags:
+      - profile
+      - team
+      summary: Get all favorites teams.
+      description: Get all favorites teams that the user added to his favorites since registered.
+      responses:
+        "200":
+          description: OK. fav teams are on the way.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/team'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+  /about:
+    get:
+      tags:
+      - site
+      description: about page
+      responses:
+        "200":
+          description: OK. about page is loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/aboutInfo'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+  /currentStageGames:
+    get:
+      tags:
+      - game
+      - site
+      - team
+      - league
+      summary: home page with current stage games.
+      description: current stage games, divided by one table of past games and one table for future games.
+      responses:
+        "200":
+          description: OK. stage games are coming
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "204":
+          description: Bad, No Content was found.
+        "400":
+          description: Bad Request.
+      security:
+      - cookieAuth: []
+components:
+  schemas:
+    coachPreview:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: ron magen
+        teamName:
+          type: string
+          example: Barcelona
+        image:
+          type: string
+          example: https://cloudinary.com/image.jpg
+      description: Represents coach preview
+    playerPreview:
+      type: object
+      properties:
+        coachPreview:
+          $ref: '#/components/schemas/coachPreview'
+        roleNumber:
+          type: number
+          example: 4
+      description: represents player preview
+    coachExtendedDetails:
+      type: object
+      properties:
+        commonName:
+          type: string
+          example: ron the magen
+        nation:
+          type: string
+          example: Israel
+        birthDate:
+          type: string
+          example: 11.05.2000
+        birthCountry:
+          type: string
+          example: Georgia
+      description: used for easy reuse of properties for player and coach
+    playerExtendedDetails:
+      required:
+      - coachExtendedDetails
+      - height
+      type: object
+      properties:
+        coachExtendedDetails:
+          $ref: '#/components/schemas/coachExtendedDetails'
+        height:
+          type: number
+          example: 1.8
+        weight:
+          type: number
+          example: 65.6
+      description: used for easy reuse of properties for player and coach
+    coach:
+      description: coach object
+      allOf:
+      - $ref: '#/components/schemas/coachExtendedDetails'
+      - $ref: '#/components/schemas/coachPreview'
+    player:
+      description: player object
+      allOf:
+      - $ref: '#/components/schemas/playerExtendedDetails'
+      - $ref: '#/components/schemas/playerPreview'
+    gamePreview:
+      type: object
+      properties:
+        date:
+          type: string
+          example: 11.05.2000
+        hour:
+          type: string
+          example: 06:30
+        field:
+          type: string
+          example: Camp nou
+        homeTeam:
+          $ref: '#/components/schemas/team'
+        awayTeam:
+          $ref: '#/components/schemas/team'
+      description: Represents game preview
+    pastGamePreview:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 2:1
+        eventCalendar:
+          type: array
+          items:
+            $ref: '#/components/schemas/eventInfo'
+        gamePreview:
+          $ref: '#/components/schemas/gamePreview'
+      description: Represents past game preview
+    team:
+      type: object
+      properties:
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/player'
+        coach:
+          $ref: '#/components/schemas/coach'
+        pastGames:
+          type: array
+          items:
+            $ref: '#/components/schemas/pastGamePreview'
+        futureGames:
+          type: array
+          items:
+            $ref: '#/components/schemas/gamePreview'
+      description: team object as requested
+    leaguePreview:
+      type: object
+      properties:
+        leagueName:
+          type: string
+          example: Superliga
+        currentSeason:
+          type: string
+          example: IDK
+        currentStage:
+          type: string
+          example: IDK
+        nextGame:
+          $ref: '#/components/schemas/gamePreview'
+      description: league object
+    aboutInfo:
+      type: object
+      properties:
+        info:
+          type: string
+          example: 'writers: guy, ron and noam'
+      description: information for about page
+    eventInfo:
+      type: object
+      properties:
+        date:
+          type: object
+          example: 07/09/2000
+        hour:
+          maximum: 24
+          minimum: 0
+          type: integer
+          example: 23
+        minute:
+          maximum: 60
+          minimum: 0
+          type: integer
+          example: 15
+        info:
+          type: string
+          example: fuel occured in ....
+      description: eventInfo object
+    inline_response_200:
+      type: object
+      properties:
+        currentLeagueInfo:
+          maxItems: 4
+          minItems: 4
+          type: array
+          items:
+            $ref: '#/components/schemas/leaguePreview'
+        favoriteGames:
+          maxItems: 3
+          minItems: 0
+          type: array
+          items:
+            $ref: '#/components/schemas/pastGamePreview'
+    body:
+      type: object
+      properties:
+        username:
+          maxLength: 8
+          minLength: 3
+          type: string
+          description: must contain letters only.
+        password:
+          maxLength: 10
+          minLength: 5
+          type: string
+          description: must contain at least one letter and at least one number.
+      example:
+        username: user
+        password: user123
+    body_1:
+      type: object
+      properties:
+        username:
+          type: string
+          example: messi
+        firstName:
+          type: string
+          example: messi
+        lastName:
+          type: string
+          example: leo
+        country:
+          type: string
+          example: Argentina
+        password:
+          type: string
+          example: iAmSpeed11
+        email:
+          type: string
+          example: messiIsCool@gmail.com
+        image:
+          type: string
+          example: https://cloudinary.com/image.jpg
+    body_2:
+      type: object
+      properties:
+        playerId:
+          type: integer
+          example: 1
+    body_3:
+      type: object
+      properties:
+        gameId:
+          type: integer
+          example: 1
+    body_4:
+      type: object
+      properties:
+        teamId:
+          type: integer
+          example: 1
+    inline_response_200_1:
+      type: object
+      properties:
+        upcomingGames:
+          type: array
+          items:
+            $ref: '#/components/schemas/gamePreview'
+        pastGames:
+          type: array
+          items:
+            $ref: '#/components/schemas/pastGamePreview'
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      name: session
+      in: cookie
